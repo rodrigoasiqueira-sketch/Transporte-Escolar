@@ -1,22 +1,41 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification - Transporte Escolar Eventos
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: alunos
+    description: Alunos
+  - name: escolas
+    description: Escolas
+  - name: motoristas
+    description: Motoristas
+  - name: empresas
+    description: Empresas
+  - name: veiculos
+    description: Veiculos
+  - name: locais
+    description: Locais de eventos
+  - name: eventos
+    description: Eventos
+  - name: sessoes
+    description: Sessões de eventos
+  - name: tempos
+    description: Tempos de deslocamento
+  - name: escalas
+    description: Escalas de transporte
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +43,1035 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Alunos ─────────────────────────────────────────────────────────────────
+  /alunos:
+    get:
+      operationId: listAlunos
+      tags: [alunos]
+      summary: Listar alunos com filtros
+      parameters:
+        - name: escola_id
+          in: query
+          schema: { type: integer }
+        - name: periodo
+          in: query
+          schema: { type: string }
+        - name: segmento
+          in: query
+          schema: { type: string }
+        - name: turma
+          in: query
+          schema: { type: string }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Lista de alunos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Aluno"
+    post:
+      operationId: createAluno
+      tags: [alunos]
+      summary: Cadastrar aluno
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlunoInput"
+      responses:
+        "201":
+          description: Aluno criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aluno"
+
+  /alunos/import:
+    post:
+      operationId: importAlunos
+      tags: [alunos]
+      summary: Importar alunos via planilha (base64)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRequest"
+      responses:
+        "200":
+          description: Resultado da importação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /alunos/contagem:
+    get:
+      operationId: contagemAlunos
+      tags: [alunos]
+      summary: Contagem de alunos agrupada por escola, período e turma
+      parameters:
+        - name: escola_id
+          in: query
+          schema: { type: integer }
+        - name: periodo
+          in: query
+          schema: { type: string }
+        - name: segmento
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Contagens agrupadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContagemAluno"
+
+  /alunos/{id}:
+    get:
+      operationId: getAluno
+      tags: [alunos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Aluno
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aluno"
+    patch:
+      operationId: updateAluno
+      tags: [alunos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlunoUpdate"
+      responses:
+        "200":
+          description: Aluno atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Aluno"
+    delete:
+      operationId: deleteAluno
+      tags: [alunos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Escolas ─────────────────────────────────────────────────────────────────
+  /escolas:
+    get:
+      operationId: listEscolas
+      tags: [escolas]
+      summary: Listar escolas
+      responses:
+        "200":
+          description: Lista de escolas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Escola"
+    post:
+      operationId: createEscola
+      tags: [escolas]
+      summary: Cadastrar escola
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscolaInput"
+      responses:
+        "201":
+          description: Escola criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escola"
+
+  /escolas/{id}:
+    get:
+      operationId: getEscola
+      tags: [escolas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Escola
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escola"
+    patch:
+      operationId: updateEscola
+      tags: [escolas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscolaUpdate"
+      responses:
+        "200":
+          description: Escola atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escola"
+    delete:
+      operationId: deleteEscola
+      tags: [escolas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Motoristas ──────────────────────────────────────────────────────────────
+  /motoristas:
+    get:
+      operationId: listMotoristas
+      tags: [motoristas]
+      summary: Listar motoristas
+      parameters:
+        - name: situacao
+          in: query
+          schema: { type: string }
+        - name: empresa_id
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista de motoristas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Motorista"
+    post:
+      operationId: createMotorista
+      tags: [motoristas]
+      summary: Cadastrar motorista
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MotoristaInput"
+      responses:
+        "201":
+          description: Motorista criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Motorista"
+
+  /motoristas/import:
+    post:
+      operationId: importMotoristas
+      tags: [motoristas]
+      summary: Importar motoristas via planilha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRequest"
+      responses:
+        "200":
+          description: Resultado da importação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /motoristas/disponibilidade:
+    get:
+      operationId: disponibilidadeMotoristas
+      tags: [motoristas]
+      summary: Verificar disponibilidade de motoristas em uma data/período
+      parameters:
+        - name: data
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: sessao_id
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Disponibilidade dos motoristas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MotoristaDisponibilidade"
+
+  /motoristas/{id}:
+    get:
+      operationId: getMotorista
+      tags: [motoristas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Motorista
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Motorista"
+    patch:
+      operationId: updateMotorista
+      tags: [motoristas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MotoristaUpdate"
+      responses:
+        "200":
+          description: Motorista atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Motorista"
+    delete:
+      operationId: deleteMotorista
+      tags: [motoristas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Empresas ────────────────────────────────────────────────────────────────
+  /empresas:
+    get:
+      operationId: listEmpresas
+      tags: [empresas]
+      summary: Listar empresas
+      responses:
+        "200":
+          description: Lista de empresas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Empresa"
+    post:
+      operationId: createEmpresa
+      tags: [empresas]
+      summary: Cadastrar empresa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmpresaInput"
+      responses:
+        "201":
+          description: Empresa criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empresa"
+
+  /empresas/import:
+    post:
+      operationId: importEmpresas
+      tags: [empresas]
+      summary: Importar empresas via planilha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRequest"
+      responses:
+        "200":
+          description: Resultado da importação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /empresas/{id}:
+    get:
+      operationId: getEmpresa
+      tags: [empresas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Empresa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empresa"
+    patch:
+      operationId: updateEmpresa
+      tags: [empresas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmpresaUpdate"
+      responses:
+        "200":
+          description: Empresa atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empresa"
+    delete:
+      operationId: deleteEmpresa
+      tags: [empresas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Veículos ────────────────────────────────────────────────────────────────
+  /veiculos:
+    get:
+      operationId: listVeiculos
+      tags: [veiculos]
+      summary: Listar veículos
+      parameters:
+        - name: empresa_id
+          in: query
+          schema: { type: integer }
+        - name: situacao
+          in: query
+          schema: { type: string }
+        - name: tipo_utilizacao
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Lista de veículos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Veiculo"
+    post:
+      operationId: createVeiculo
+      tags: [veiculos]
+      summary: Cadastrar veículo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VeiculoInput"
+      responses:
+        "201":
+          description: Veículo criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Veiculo"
+
+  /veiculos/import:
+    post:
+      operationId: importVeiculos
+      tags: [veiculos]
+      summary: Importar veículos via planilha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportRequest"
+      responses:
+        "200":
+          description: Resultado da importação
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /veiculos/{id}:
+    get:
+      operationId: getVeiculo
+      tags: [veiculos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Veículo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Veiculo"
+    patch:
+      operationId: updateVeiculo
+      tags: [veiculos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VeiculoUpdate"
+      responses:
+        "200":
+          description: Veículo atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Veiculo"
+    delete:
+      operationId: deleteVeiculo
+      tags: [veiculos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Locais de Eventos ───────────────────────────────────────────────────────
+  /locais:
+    get:
+      operationId: listLocais
+      tags: [locais]
+      summary: Listar locais de eventos
+      responses:
+        "200":
+          description: Lista de locais
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Local"
+    post:
+      operationId: createLocal
+      tags: [locais]
+      summary: Cadastrar local de evento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalInput"
+      responses:
+        "201":
+          description: Local criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Local"
+
+  /locais/{id}:
+    get:
+      operationId: getLocal
+      tags: [locais]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Local
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Local"
+    patch:
+      operationId: updateLocal
+      tags: [locais]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalUpdate"
+      responses:
+        "200":
+          description: Local atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Local"
+    delete:
+      operationId: deleteLocal
+      tags: [locais]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Tempos de Deslocamento ──────────────────────────────────────────────────
+  /tempos-deslocamento:
+    get:
+      operationId: listTemposDeslocamento
+      tags: [tempos]
+      summary: Listar tempos de deslocamento escola → local
+      parameters:
+        - name: escola_id
+          in: query
+          schema: { type: integer }
+        - name: local_id
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista de tempos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TempoDeslocamento"
+    post:
+      operationId: upsertTempoDeslocamento
+      tags: [tempos]
+      summary: Criar ou atualizar tempo de deslocamento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TempoDeslocamentoInput"
+      responses:
+        "200":
+          description: Tempo de deslocamento salvo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TempoDeslocamento"
+
+  /tempos-deslocamento/{id}:
+    patch:
+      operationId: updateTempoDeslocamento
+      tags: [tempos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TempoDeslocamentoUpdate"
+      responses:
+        "200":
+          description: Atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TempoDeslocamento"
+    delete:
+      operationId: deleteTempoDeslocamento
+      tags: [tempos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Eventos ─────────────────────────────────────────────────────────────────
+  /eventos:
+    get:
+      operationId: listEventos
+      tags: [eventos]
+      summary: Listar eventos
+      parameters:
+        - name: local_id
+          in: query
+          schema: { type: integer }
+        - name: data_inicio
+          in: query
+          schema: { type: string, format: date }
+        - name: data_fim
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Lista de eventos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Evento"
+    post:
+      operationId: createEvento
+      tags: [eventos]
+      summary: Criar evento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventoInput"
+      responses:
+        "201":
+          description: Evento criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evento"
+
+  /eventos/{id}:
+    get:
+      operationId: getEvento
+      tags: [eventos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Evento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evento"
+    patch:
+      operationId: updateEvento
+      tags: [eventos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventoUpdate"
+      responses:
+        "200":
+          description: Evento atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Evento"
+    delete:
+      operationId: deleteEvento
+      tags: [eventos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  /eventos/{id}/resumo:
+    get:
+      operationId: getEventoResumo
+      tags: [eventos]
+      summary: Resumo do evento - alunos, vagas, veículos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Resumo do evento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventoResumo"
+
+  # ── Sessões ─────────────────────────────────────────────────────────────────
+  /eventos/{eventoId}/sessoes:
+    get:
+      operationId: listSessoes
+      tags: [sessoes]
+      summary: Listar sessões de um evento
+      parameters:
+        - name: eventoId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista de sessões
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sessao"
+    post:
+      operationId: createSessao
+      tags: [sessoes]
+      summary: Criar sessão para um evento
+      parameters:
+        - name: eventoId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessaoInput"
+      responses:
+        "201":
+          description: Sessão criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sessao"
+
+  /eventos/{eventoId}/sessoes/{id}:
+    patch:
+      operationId: updateSessao
+      tags: [sessoes]
+      parameters:
+        - name: eventoId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessaoUpdate"
+      responses:
+        "200":
+          description: Sessão atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sessao"
+    delete:
+      operationId: deleteSessao
+      tags: [sessoes]
+      parameters:
+        - name: eventoId
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  # ── Escalas ─────────────────────────────────────────────────────────────────
+  /escalas:
+    get:
+      operationId: listEscalas
+      tags: [escalas]
+      summary: Listar escalas de transporte
+      parameters:
+        - name: sessao_id
+          in: query
+          schema: { type: integer }
+        - name: escola_id
+          in: query
+          schema: { type: integer }
+        - name: evento_id
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Lista de escalas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Escala"
+    post:
+      operationId: createEscala
+      tags: [escalas]
+      summary: Criar escala de transporte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscalaInput"
+      responses:
+        "201":
+          description: Escala criada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escala"
+
+  /escalas/{id}:
+    get:
+      operationId: getEscala
+      tags: [escalas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Escala
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escala"
+    patch:
+      operationId: updateEscala
+      tags: [escalas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscalaUpdate"
+      responses:
+        "200":
+          description: Escala atualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Escala"
+    delete:
+      operationId: deleteEscala
+      tags: [escalas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deletado
+
+  /escalas/{id}/capacidade:
+    get:
+      operationId: getEscalaCapacidade
+      tags: [escalas]
+      summary: Análise de capacidade de uma escala
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Análise de capacidade
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EscalaCapacidade"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +1079,446 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    # ── Aluno ──────────────────────────────────────────────────────────────────
+    Aluno:
+      type: object
+      required: [id, nome, ra, escola_id, turma, periodo, segmento]
+      properties:
+        id:          { type: integer }
+        ra:          { type: string }
+        nome:        { type: string }
+        escola_id:   { type: integer }
+        escola_nome: { type: ["string", "null"] }
+        turma:       { type: string }
+        classe:      { type: ["string", "null"] }
+        periodo:     { type: string }
+        segmento:    { type: string }
+        sexo:        { type: ["string", "null"] }
+        nascimento:  { type: ["string", "null"] }
+        situacao_matricula: { type: ["string", "null"] }
+        zona:        { type: ["string", "null"] }
+        frota:       { type: ["string", "null"] }
+
+    AlunoInput:
+      type: object
+      required: [nome, ra, escola_id, turma, periodo, segmento]
+      properties:
+        ra:          { type: string }
+        nome:        { type: string }
+        escola_id:   { type: integer }
+        turma:       { type: string }
+        classe:      { type: string }
+        periodo:     { type: string }
+        segmento:    { type: string }
+        sexo:        { type: string }
+        nascimento:  { type: string }
+        situacao_matricula: { type: string }
+        zona:        { type: string }
+        frota:       { type: string }
+
+    AlunoUpdate:
+      type: object
+      properties:
+        nome:        { type: string }
+        turma:       { type: string }
+        classe:      { type: string }
+        periodo:     { type: string }
+        segmento:    { type: string }
+        situacao_matricula: { type: string }
+        escola_id:   { type: integer }
+
+    ContagemAluno:
+      type: object
+      required: [escola_id, escola_nome, periodo, segmento, turma, quantidade]
+      properties:
+        escola_id:   { type: integer }
+        escola_nome: { type: string }
+        periodo:     { type: string }
+        segmento:    { type: string }
+        turma:       { type: string }
+        quantidade:  { type: integer }
+
+    # ── Escola ────────────────────────────────────────────────────────────────
+    Escola:
+      type: object
+      required: [id, nome]
+      properties:
+        id:          { type: integer }
+        nome:        { type: string }
+        num_prodesp: { type: ["string", "null"] }
+        endereco:    { type: ["string", "null"] }
+        cidade:      { type: ["string", "null"] }
+        total_alunos: { type: ["integer", "null"] }
+
+    EscolaInput:
+      type: object
+      required: [nome]
+      properties:
+        nome:        { type: string }
+        num_prodesp: { type: string }
+        endereco:    { type: string }
+        cidade:      { type: string }
+
+    EscolaUpdate:
+      type: object
+      properties:
+        nome:        { type: string }
+        num_prodesp: { type: string }
+        endereco:    { type: string }
+        cidade:      { type: string }
+
+    # ── Motorista ─────────────────────────────────────────────────────────────
+    Motorista:
+      type: object
+      required: [id, nome, situacao]
+      properties:
+        id:             { type: integer }
+        codigo:         { type: ["string", "null"] }
+        nome:           { type: string }
+        funcao:         { type: ["string", "null"] }
+        telefone:       { type: ["string", "null"] }
+        situacao:       { type: string }
+        cnh_categoria:  { type: ["string", "null"] }
+        cnh_vencimento: { type: ["string", "null"] }
+        empresa_id:     { type: ["integer", "null"] }
+        empresa_nome:   { type: ["string", "null"] }
+        eh_proprio:     { type: boolean }
+
+    MotoristaInput:
+      type: object
+      required: [nome, situacao]
+      properties:
+        codigo:         { type: string }
+        nome:           { type: string }
+        funcao:         { type: string }
+        telefone:       { type: string }
+        situacao:       { type: string }
+        cnh_categoria:  { type: string }
+        cnh_vencimento: { type: string }
+        empresa_id:     { type: integer }
+        eh_proprio:     { type: boolean }
+
+    MotoristaUpdate:
+      type: object
+      properties:
+        nome:           { type: string }
+        funcao:         { type: string }
+        telefone:       { type: string }
+        situacao:       { type: string }
+        cnh_categoria:  { type: string }
+        cnh_vencimento: { type: string }
+        empresa_id:     { type: integer }
+        eh_proprio:     { type: boolean }
+
+    MotoristaDisponibilidade:
+      type: object
+      required: [id, nome, disponivel]
+      properties:
+        id:         { type: integer }
+        nome:       { type: string }
+        disponivel: { type: boolean }
+        conflito:   { type: ["string", "null"] }
+
+    # ── Empresa ───────────────────────────────────────────────────────────────
+    Empresa:
+      type: object
+      required: [id, nome]
+      properties:
+        id:           { type: integer }
+        codigo:       { type: ["string", "null"] }
+        nome:         { type: string }
+        cnpj:         { type: ["string", "null"] }
+        responsavel:  { type: ["string", "null"] }
+        telefone:     { type: ["string", "null"] }
+        email:        { type: ["string", "null"] }
+        modalidade:   { type: ["string", "null"] }
+        ativo:        { type: boolean }
+        total_veiculos: { type: ["integer", "null"] }
+
+    EmpresaInput:
+      type: object
+      required: [nome]
+      properties:
+        codigo:      { type: string }
+        nome:        { type: string }
+        cnpj:        { type: string }
+        responsavel: { type: string }
+        telefone:    { type: string }
+        email:       { type: string }
+        modalidade:  { type: string }
+        ativo:       { type: boolean }
+
+    EmpresaUpdate:
+      type: object
+      properties:
+        nome:        { type: string }
+        cnpj:        { type: string }
+        responsavel: { type: string }
+        telefone:    { type: string }
+        email:       { type: string }
+        modalidade:  { type: string }
+        ativo:       { type: boolean }
+
+    # ── Veículo ───────────────────────────────────────────────────────────────
+    Veiculo:
+      type: object
+      required: [id, modelo, placa, lugares, empresa_id]
+      properties:
+        id:              { type: integer }
+        prefixo:         { type: ["string", "null"] }
+        tipo:            { type: ["string", "null"] }
+        marca:           { type: ["string", "null"] }
+        modelo:          { type: string }
+        placa:           { type: string }
+        cor:             { type: ["string", "null"] }
+        empresa_id:      { type: integer }
+        empresa_nome:    { type: ["string", "null"] }
+        lugares:         { type: integer }
+        situacao:        { type: ["string", "null"] }
+        tipo_utilizacao: { type: ["string", "null"] }
+        ano:             { type: ["string", "null"] }
+        acessibilidade:  { type: boolean }
+
+    VeiculoInput:
+      type: object
+      required: [modelo, placa, lugares, empresa_id]
+      properties:
+        prefixo:         { type: string }
+        tipo:            { type: string }
+        marca:           { type: string }
+        modelo:          { type: string }
+        placa:           { type: string }
+        cor:             { type: string }
+        empresa_id:      { type: integer }
+        lugares:         { type: integer }
+        situacao:        { type: string }
+        tipo_utilizacao: { type: string }
+        ano:             { type: string }
+        acessibilidade:  { type: boolean }
+
+    VeiculoUpdate:
+      type: object
+      properties:
+        modelo:          { type: string }
+        placa:           { type: string }
+        cor:             { type: string }
+        empresa_id:      { type: integer }
+        lugares:         { type: integer }
+        situacao:        { type: string }
+        tipo_utilizacao: { type: string }
+        acessibilidade:  { type: boolean }
+
+    # ── Local ─────────────────────────────────────────────────────────────────
+    Local:
+      type: object
+      required: [id, nome]
+      properties:
+        id:       { type: integer }
+        nome:     { type: string }
+        endereco: { type: ["string", "null"] }
+        cidade:   { type: ["string", "null"] }
+        observacoes: { type: ["string", "null"] }
+
+    LocalInput:
+      type: object
+      required: [nome]
+      properties:
+        nome:        { type: string }
+        endereco:    { type: string }
+        cidade:      { type: string }
+        observacoes: { type: string }
+
+    LocalUpdate:
+      type: object
+      properties:
+        nome:        { type: string }
+        endereco:    { type: string }
+        cidade:      { type: string }
+        observacoes: { type: string }
+
+    # ── Tempo de Deslocamento ─────────────────────────────────────────────────
+    TempoDeslocamento:
+      type: object
+      required: [id, escola_id, local_id, minutos]
+      properties:
+        id:          { type: integer }
+        escola_id:   { type: integer }
+        escola_nome: { type: ["string", "null"] }
+        local_id:    { type: integer }
+        local_nome:  { type: ["string", "null"] }
+        minutos:     { type: integer }
+
+    TempoDeslocamentoInput:
+      type: object
+      required: [escola_id, local_id, minutos]
+      properties:
+        escola_id: { type: integer }
+        local_id:  { type: integer }
+        minutos:   { type: integer }
+
+    TempoDeslocamentoUpdate:
+      type: object
+      properties:
+        minutos: { type: integer }
+
+    # ── Evento ────────────────────────────────────────────────────────────────
+    Evento:
+      type: object
+      required: [id, nome, data, local_id]
+      properties:
+        id:          { type: integer }
+        nome:        { type: string }
+        data:        { type: string, format: date }
+        local_id:    { type: integer }
+        local_nome:  { type: ["string", "null"] }
+        observacoes: { type: ["string", "null"] }
+        total_sessoes: { type: ["integer", "null"] }
+
+    EventoInput:
+      type: object
+      required: [nome, data, local_id]
+      properties:
+        nome:        { type: string }
+        data:        { type: string, format: date }
+        local_id:    { type: integer }
+        observacoes: { type: string }
+
+    EventoUpdate:
+      type: object
+      properties:
+        nome:        { type: string }
+        data:        { type: string, format: date }
+        local_id:    { type: integer }
+        observacoes: { type: string }
+
+    EventoResumo:
+      type: object
+      required: [evento_id, total_alunos, total_vagas, vagas_sobra, total_veiculos, sessoes]
+      properties:
+        evento_id:      { type: integer }
+        evento_nome:    { type: string }
+        total_alunos:   { type: integer }
+        total_vagas:    { type: integer }
+        vagas_sobra:    { type: integer }
+        total_veiculos: { type: integer }
+        sessoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessaoResumo"
+
+    # ── Sessão ────────────────────────────────────────────────────────────────
+    Sessao:
+      type: object
+      required: [id, evento_id, horario_inicio, duracao_minutos]
+      properties:
+        id:               { type: integer }
+        evento_id:        { type: integer }
+        nome:             { type: ["string", "null"] }
+        horario_inicio:   { type: string }
+        duracao_minutos:  { type: integer }
+        horario_termino:  { type: ["string", "null"] }
+        periodo_sessao:   { type: ["string", "null"] }
+
+    SessaoInput:
+      type: object
+      required: [horario_inicio, duracao_minutos]
+      properties:
+        nome:            { type: string }
+        horario_inicio:  { type: string }
+        duracao_minutos: { type: integer }
+
+    SessaoUpdate:
+      type: object
+      properties:
+        nome:            { type: string }
+        horario_inicio:  { type: string }
+        duracao_minutos: { type: integer }
+
+    SessaoResumo:
+      type: object
+      required: [sessao_id, horario_inicio, horario_termino, total_escalas]
+      properties:
+        sessao_id:       { type: integer }
+        nome:            { type: ["string", "null"] }
+        horario_inicio:  { type: string }
+        horario_termino: { type: string }
+        total_escalas:   { type: integer }
+        total_alunos:    { type: integer }
+        total_vagas:     { type: integer }
+
+    # ── Escala ────────────────────────────────────────────────────────────────
+    Escala:
+      type: object
+      required: [id, sessao_id, escola_id, veiculo_id]
+      properties:
+        id:                  { type: integer }
+        sessao_id:           { type: integer }
+        escola_id:           { type: integer }
+        escola_nome:         { type: ["string", "null"] }
+        veiculo_id:          { type: integer }
+        veiculo_placa:       { type: ["string", "null"] }
+        veiculo_modelo:      { type: ["string", "null"] }
+        motorista_id:        { type: ["integer", "null"] }
+        motorista_nome:      { type: ["string", "null"] }
+        vagas_disponibilizadas: { type: integer }
+        horario_embarque:    { type: ["string", "null"] }
+        periodo:             { type: ["string", "null"] }
+        segmento_filtro:     { type: ["string", "null"] }
+        turma_filtro:        { type: ["string", "null"] }
+        total_alunos:        { type: ["integer", "null"] }
+
+    EscalaInput:
+      type: object
+      required: [sessao_id, escola_id, veiculo_id]
+      properties:
+        sessao_id:              { type: integer }
+        escola_id:              { type: integer }
+        veiculo_id:             { type: integer }
+        motorista_id:           { type: integer }
+        vagas_disponibilizadas: { type: integer }
+        periodo:                { type: string }
+        segmento_filtro:        { type: string }
+        turma_filtro:           { type: string }
+
+    EscalaUpdate:
+      type: object
+      properties:
+        veiculo_id:             { type: integer }
+        motorista_id:           { type: integer }
+        vagas_disponibilizadas: { type: integer }
+        periodo:                { type: string }
+        segmento_filtro:        { type: string }
+        turma_filtro:           { type: string }
+
+    EscalaCapacidade:
+      type: object
+      required: [escala_id, total_alunos, total_vagas, vagas_sobra, horario_embarque]
+      properties:
+        escala_id:       { type: integer }
+        escola_nome:     { type: string }
+        total_alunos:    { type: integer }
+        total_vagas:     { type: integer }
+        vagas_sobra:     { type: integer }
+        horario_embarque: { type: ["string", "null"] }
+        tempo_deslocamento_minutos: { type: ["integer", "null"] }
+
+    # ── Importação ────────────────────────────────────────────────────────────
+    ImportRequest:
+      type: object
+      required: [fileBase64]
+      properties:
+        fileBase64: { type: string }
+
+    ImportResult:
+      type: object
+      required: [total, importados, ignorados, erros]
+      properties:
+        total:     { type: integer }
+        importados: { type: integer }
+        ignorados:  { type: integer }
+        erros:
+          type: array
+          items:
+            type: string
