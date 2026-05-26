@@ -1,0 +1,35 @@
+pensando bem.... quero fazer um programa que me ajude a organizar transporte eventos...
+
+eu alimento o sistema com uma planilha com os alunos do município, com suas escolas, series etc...
+
+de repente me solicitam para realizar o transporte dos alunos do 4º ano por ex, para o teatro
+
+eu precisarei então das seguintes colunas:
+
+escola: nomes (estará na planilha)
+período: manhã, tarde, integral ou noite: (estará na planilha)
+seguimento: tipo de ensino, que seria infantil, funda etc... (estará na planilha)
+quantidade de alunos: (neste caso, por período) a soma de alunos daquela determinada escola, serie e período- (precisarei ter estes filtros para poder ter dados do publico alvo a ser atendido)
+data do evento: data
+horário de inicio do evento ou sessão: é interessante que eu possa colocar quantas sessões são, e quais o horários de inicio dos eventos
+duração de tempo do evento: 
+horário de embarque na escola: devera considerar o tempo de deslocamento da escola até o local do evento... isso é mais trabalhoso pra mim, pois terei que alimentar a base de escola, com o tempo de deslocamento para cada local:
+horário de termino do evento: é a soma do horário de incio, mais o horário de termino
+período em que ocorre a sessão do evento:isso é importante, pois o aluno do integral pode participar de sessões de manhã ou a tarde
+motorista ou empresa: incluirei o nome dos motoristas e das empresas.... no caso das empresas não sabemos o nome do motorista... como podem ser vários veículos de determinada empresa, antes de começar a escola do evento, eu deverei colocar quantos veículos temos disponíveis daquela empresa, e qnd eu escalar toda a qunt preciso ser impedido de colocar mais... já nos casos dos motoristas meus, que tem seus nomes, vc não deixa repetir a escala no mesmo dia e período
+vagas disponíveis no veiculo: sera a soma da quantidade de lugares disponibilizados, considerando os veículos escalados, na tabela de veículos que te mandarei
+vagas que sobram para acompanhantes: é a quantidade de vagas no veiculo, subtraída pela quantidade de alunos a serem atendidos
+contagem do total de veículos para atendimento daquela escola: contagem dos veículos para aquela viagem
+tempo de deslocamento entre a escola e o local do evento: é o tempo em minutos que eu alimetarei aos poucos na planilha de escola X locais de eventos ou passeio... portanto, sempre deverão ter campos para adicionar escola e locais de destino:
+
+importante: 
+
+a planilha que vou carregar, terá alunos repetidos, que serão mais facilmente encontrados pelo RA... neste caso, é pq os alunos fazem atividades de contra turno, e o contra turno não deve contar... neste caso, deverão ser considerados apenas alunos realmente de series, que são do ensino infantil e também até o 5° ano, e multisseriadas tbm são salar normais... no que fugi disso vc me pergunta
+
+quer que eu já te mande a planilha de alunos, motoristas e veículos e empresas? ou mando uma por vez?
+
+quer que eu já te fale o tipos de relatório que precisarei que gere, ou deixa pra depois?
+
+
+
+
