@@ -1,36 +1,90 @@
 import { Router, type IRouter } from "express";
 import { db, alunosTable, escolasTable } from "@workspace/db";
-import { eq, sql, ilike, and, inArray } from "drizzle-orm";
+import { eq, sql, ilike, and } from "drizzle-orm";
 import {
   CreateAlunoBody, UpdateAlunoParams, UpdateAlunoBody,
   DeleteAlunoParams, GetAlunoParams, ImportAlunosBody,
   ListAlunosQueryParams, ContagemAlunosQueryParams,
 } from "@workspace/api-zod";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
-// Helper to classify segmento from turma
-function inferSegmento(turma: string): string {
-  const t = turma.toUpperCase();
-  if (t.includes("INF") || t.includes("INFANT")) return "INFANTIL";
-  if (t.includes("MU") || t.includes("MULTIS")) return "MULTISSERIADA";
-  if (t.includes("1") || t.includes("2") || t.includes("3") || t.includes("4") || t.includes("5")) return "FUNDAMENTAL";
-  if (t.includes("FUND") || t.includes("EF")) return "FUNDAMENTAL";
-  return "OUTRO";
+// Find first column index whose header matches any fragment.
+// Exact match (case-insensitive) is tried first across all headers;
+// only if no exact match is found falls back to substring search.
+function findCol(headers: (string | null)[], ...fragments: string[]): number {
+  // 1) Exact match pass
+  for (const fragment of fragments) {
+    const idx = headers.findIndex(
+      h => h != null && h.toLowerCase().trim() === fragment.toLowerCase().trim()
+    );
+    if (idx >= 0) return idx;
+  }
+  // 2) Substring fallback
+  return headers.findIndex(h => {
+    if (!h) return false;
+    const low = h.toLowerCase().trim();
+    return fragments.some(f => low.includes(f.toLowerCase()));
+  });
 }
 
-function isValidSegmento(turma: string): boolean {
-  const t = turma.toUpperCase();
-  if (t.includes("INF") || t.includes("INFANT")) return true;
-  if (t.includes("MU INF") || t.includes("MULTIS")) return true;
-  // Fundamental up to 5th year
-  const match = t.match(/(\d+)[°ºo]?\s*(ANO|A)/);
-  if (match) {
-    const year = parseInt(match[1]);
-    return year >= 1 && year <= 5;
+function inferSegmento(turma: string | null, segmentoCol: string | null): string {
+  // If a segmento column exists, use it directly
+  if (segmentoCol) {
+    const s = segmentoCol.toUpperCase().trim();
+    if (s.includes("INFANT")) return "INFANTIL";
+    if (s.includes("MULTI") || s.includes("MULT") || s.includes("SERIADA")) return "MULTISSERIADA";
+    if (s.includes("FUND") || s.includes("EF") || s.includes("ANOS")) return "FUNDAMENTAL";
   }
-  if (t.includes("MU")) return true; // multisseriada
-  return false;
+
+  if (!turma) return "OUTRO";
+  const t = turma.toUpperCase().trim();
+
+  // ── Multisseriada (check before Infantil to catch "MU INF") ──────────────
+  // Patterns: "MU INF (...)", "FUND - MULT (...)", "S1 - MULT (...)"
+  if (t.match(/^MU\s+INF/)) return "MULTISSERIADA";
+  if (t.includes("MULT")) return "MULTISSERIADA";     // FUND - MULT, S1 - MULT
+  if (t.includes("MULTI")) return "MULTISSERIADA";
+  if (t.includes("SERIADA")) return "MULTISSERIADA";
+
+  // ── Infantil ──────────────────────────────────────────────────────────────
+  // Patterns: "INF I", "INF II", "INF V", "INFANTIL", "BERÇÁRIO 1", "EI"
+  if (t.match(/^INF\s*(I{1,3}|IV|V|VI)?($|\s|\()/)) return "INFANTIL";
+  if (t.match(/^INFANTIL/)) return "INFANTIL";
+  if (t.match(/^BERÇ/)) return "INFANTIL";
+  if (t.match(/^EI\s/)) return "INFANTIL";
+  if (t.match(/^PRÉ\s|^PRE\s|^PRE-/)) return "INFANTIL";
+  if (t.match(/^CRECHE/)) return "INFANTIL";
+  if (t.includes("INFANT")) return "INFANTIL";
+
+  // ── Fundamental 1º–5º ─────────────────────────────────────────────────────
+  // Patterns: "1º", "2º", "3º", "4º", "5º", "1° ANO", "2 ANO", "1A", "2B", "01A"
+  // Just the ordinal number like "5º"
+  const matchOrdinal = t.match(/^0?([1-9])\s*[°ºo]/);
+  if (matchOrdinal) {
+    const year = parseInt(matchOrdinal[1]);
+    if (year >= 1 && year <= 5) return "FUNDAMENTAL";
+    return "OUTRO";
+  }
+
+  // Class code: "1A", "2B", "3C" etc.
+  const matchCode = t.match(/^0?([1-9])[A-Z\s]/);
+  if (matchCode) {
+    const year = parseInt(matchCode[1]);
+    if (year >= 1 && year <= 5) return "FUNDAMENTAL";
+    return "OUTRO";
+  }
+
+  // AEE with grade info like "AEE (1º)", "AEE (INF IV)"
+  const matchAee = t.match(/^AEE\s*\(([^)]+)\)/);
+  if (matchAee) {
+    const inner = matchAee[1].trim();
+    const sub = inferSegmento(inner, null);
+    return sub !== "OUTRO" ? sub : "OUTRO";
+  }
+
+  return "OUTRO";
 }
 
 function mapAluno(a: typeof alunosTable.$inferSelect, escolaNome: string | null) {
@@ -96,66 +150,116 @@ router.post("/alunos/import", async (req, res) => {
     const fileBuffer = Buffer.from(req.body.fileBase64, "base64");
     const { parseXlsxBuffer } = await import("../lib/xlsx-parser.js");
     const rows = parseXlsxBuffer(fileBuffer);
-    if (!rows || rows.length < 2) return res.json({ total: 0, importados: 0, ignorados: 0, erros: [] });
+
+    logger.info({ totalRows: rows.length }, "XLSX parsed");
+
+    if (!rows || rows.length < 2) {
+      return res.json({ total: 0, importados: 0, ignorados: 0, erros: ["Arquivo vazio ou sem linhas de dados"] });
+    }
 
     const headers = rows[0] as (string | null)[];
-    const idx = (name: string) => headers.findIndex(h => h?.toLowerCase().includes(name.toLowerCase()));
-    const idxEscola = idx("Escola"); const idxNome = idx("Nome Aluno");
-    const idxRa = idx("RA"); const idxTurma = idx("Turma");
-    const idxClasse = idx("Classe"); const idxPeriodo = idx("Periodo");
-    const idxSexo = idx("SEXO"); const idxNasc = idx("Nascimento");
-    const idxSit = idx("Situação"); const idxZona = idx("Zona");
-    const idxFrota = idx("Tipo");
+    logger.info({ headers }, "XLSX headers found");
+
+    // Flexible column detection
+    const idxEscola   = findCol(headers, "escola");
+    const idxNome     = findCol(headers, "nome aluno", "nome do aluno", "aluno", "nome");
+    const idxRa       = findCol(headers, "ra", "r.a", "r. a", "registro");
+    const idxTurma    = findCol(headers, "turma");
+    const idxClasse   = findCol(headers, "classe");
+    const idxPeriodo  = findCol(headers, "periodo", "período", "turno");
+    const idxSegmento = findCol(headers, "segmento", "modalidade");
+    const idxSexo     = findCol(headers, "sexo", "gênero", "genero");
+    const idxNasc     = findCol(headers, "nascimento", "data nasc", "dt nasc");
+    const idxSit      = findCol(headers, "situação", "situacao", "status", "matrícula");
+    const idxZona     = findCol(headers, "zona");
+    const idxFrota    = findCol(headers, "frota", "tipo", "modalidade");
+
+    logger.info({
+      idxRa, idxNome, idxTurma, idxEscola, idxPeriodo, idxSegmento
+    }, "Column indices resolved");
+
+    if (idxRa < 0 || idxNome < 0) {
+      return res.json({
+        total: 0, importados: 0, ignorados: 0,
+        erros: [`Colunas obrigatórias não encontradas. Cabeçalhos detectados: ${headers.filter(Boolean).join(", ")}`],
+      });
+    }
 
     // Pre-load all schools for fast lookup
     const todasEscolas = await db.select().from(escolasTable);
     const escolaMap = new Map(todasEscolas.map(e => [e.nome.toUpperCase().trim(), e.id]));
 
-    let importados = 0; let ignorados = 0; const erros: string[] = [];
-    // Deduplicate RAs in the file itself (only keep first occurrence)
+    let importados = 0;
+    let ignorados = 0;
+    const erros: string[] = [];
     const seenRas = new Set<string>();
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i] as (string | null)[];
-      const ra = idxRa >= 0 ? (row[idxRa] ?? "") : "";
-      const nome = idxNome >= 0 ? (row[idxNome] ?? "") : "";
-      const turma = idxTurma >= 0 ? (row[idxTurma] ?? "") : "";
 
-      if (!ra || !nome) { erros.push(`Linha ${i + 1}: RA ou nome vazio`); continue; }
+      // Skip completely empty rows
+      if (row.every(cell => !cell)) continue;
+
+      const ra = String(row[idxRa] ?? "").trim();
+      const nome = String(row[idxNome] ?? "").trim();
+      const turma = idxTurma >= 0 ? String(row[idxTurma] ?? "").trim() : "";
+      const segmentoRaw = idxSegmento >= 0 ? String(row[idxSegmento] ?? "").trim() : null;
+
+      if (!ra || !nome) {
+        erros.push(`Linha ${i + 1}: RA ou nome vazio`);
+        continue;
+      }
 
       // Skip duplicate RAs (contra-turno)
-      if (seenRas.has(ra)) { ignorados++; continue; }
+      if (seenRas.has(ra)) {
+        ignorados++;
+        continue;
+      }
       seenRas.add(ra);
 
-      // Validate segmento (only Infantil, Fundamental up to 5th year, Multisseriada)
-      const segmento = inferSegmento(turma);
-      if (segmento === "OUTRO") { ignorados++; continue; }
+      // Determine segmento
+      const segmento = inferSegmento(turma, segmentoRaw);
+      if (segmento === "OUTRO") {
+        ignorados++;
+        continue;
+      }
 
-      const periodo = idxPeriodo >= 0 ? (row[idxPeriodo] ?? null) : null;
-      const escolaNome = idxEscola >= 0 ? ((row[idxEscola] ?? "").toUpperCase().trim()) : "";
-      let escolaId: number | null = escolaMap.get(escolaNome) ?? null;
+      const periodo = idxPeriodo >= 0 ? String(row[idxPeriodo] ?? "").trim() || null : null;
+      const escolaNomeRaw = idxEscola >= 0 ? String(row[idxEscola] ?? "").trim() : "";
+      const escolaNomeKey = escolaNomeRaw.toUpperCase();
+      let escolaId: number | null = escolaMap.get(escolaNomeKey) ?? null;
 
-      if (!escolaId && escolaNome) {
+      if (!escolaId && escolaNomeRaw) {
         try {
-          const [newEscola] = await db.insert(escolasTable).values({ nome: row[idxEscola]! }).returning();
-          escolaId = newEscola.id;
-          escolaMap.set(escolaNome, escolaId);
-        } catch { /* may already exist */ }
+          const [newEscola] = await db.insert(escolasTable)
+            .values({ nome: escolaNomeRaw })
+            .onConflictDoNothing()
+            .returning();
+          if (newEscola) {
+            escolaId = newEscola.id;
+            escolaMap.set(escolaNomeKey, escolaId);
+          }
+        } catch {
+          const [existing] = await db.select().from(escolasTable)
+            .where(eq(sql`upper(trim(${escolasTable.nome}))`, escolaNomeKey));
+          if (existing) escolaId = existing.id;
+        }
       }
 
       try {
         await db.insert(alunosTable).values({
-          ra, nome: row[idxNome]!,
+          ra,
+          nome,
           escolaId,
           turma: turma || null,
-          classe: idxClasse >= 0 ? (row[idxClasse] ?? null) : null,
+          classe: idxClasse >= 0 ? (String(row[idxClasse] ?? "").trim() || null) : null,
           periodo,
           segmento,
-          sexo: idxSexo >= 0 ? (row[idxSexo] ?? null) : null,
-          nascimento: idxNasc >= 0 ? (row[idxNasc] ?? null) : null,
-          situacaoMatricula: idxSit >= 0 ? (row[idxSit] ?? null) : null,
-          zona: idxZona >= 0 ? (row[idxZona] ?? null) : null,
-          frota: idxFrota >= 0 ? (row[idxFrota] ?? null) : null,
+          sexo: idxSexo >= 0 ? (String(row[idxSexo] ?? "").trim() || null) : null,
+          nascimento: idxNasc >= 0 ? (String(row[idxNasc] ?? "").trim() || null) : null,
+          situacaoMatricula: idxSit >= 0 ? (String(row[idxSit] ?? "").trim() || null) : null,
+          zona: idxZona >= 0 ? (String(row[idxZona] ?? "").trim() || null) : null,
+          frota: idxFrota >= 0 ? (String(row[idxFrota] ?? "").trim() || null) : null,
         }).onConflictDoNothing();
         importados++;
       } catch (e) {
@@ -163,6 +267,7 @@ router.post("/alunos/import", async (req, res) => {
       }
     }
 
+    logger.info({ importados, ignorados, erros: erros.length }, "Import complete");
     res.json({ total: rows.length - 1, importados, ignorados, erros });
   } catch (err) {
     req.log.error({ err }, "Error importing alunos");

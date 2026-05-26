@@ -9,6 +9,7 @@ import locaisRouter from "./locais";
 import temposRouter from "./tempos";
 import eventosRouter from "./eventos";
 import escalasRouter from "./escalas";
+import debugImportRouter from "./debug-import";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(locaisRouter);
 router.use(temposRouter);
 router.use(eventosRouter);
 router.use(escalasRouter);
+router.use(debugImportRouter);
 
 export default router;
