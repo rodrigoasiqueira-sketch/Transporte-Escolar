@@ -1,16 +1,16 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useListEventos, useListAlunos, useListVeiculos } from "@workspace/api-client-react";
+import { useListEventos, useContagemAlunos, useListVeiculos } from "@workspace/api-client-react";
 import { CalendarDays, Users, Bus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const { data: eventos, isLoading: loadingEventos } = useListEventos();
-  const { data: alunos, isLoading: loadingAlunos } = useListAlunos();
+  const { data: contagem, isLoading: loadingAlunos } = useContagemAlunos();
   const { data: veiculos, isLoading: loadingVeiculos } = useListVeiculos();
 
   const totalEventosMes = eventos?.length || 0;
-  const totalAlunos = alunos?.length || 0;
+  const totalAlunos = contagem?.reduce((acc, r) => acc + (r.quantidade ?? 0), 0) ?? 0;
   const totalVeiculos = veiculos?.filter(v => v.situacao === 'Ativo').length || 0;
 
   return (
