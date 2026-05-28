@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './alterarSenhaInput';
 export * from './aluno';
 export * from './alunoInput';
 export * from './alunoUpdate';
+export * from './atualizarUsuarioInput';
 export * from './contagemAluno';
 export * from './contagemAlunosParams';
 export * from './disponibilidadeMotoristasParams';
@@ -38,10 +40,13 @@ export * from './listVeiculosParams';
 export * from './local';
 export * from './localInput';
 export * from './localUpdate';
+export * from './loginInput';
 export * from './motorista';
 export * from './motoristaDisponibilidade';
 export * from './motoristaInput';
 export * from './motoristaUpdate';
+export * from './novoUsuarioInput';
+export * from './resetarSenhaUsuario200';
 export * from './sessao';
 export * from './sessaoInput';
 export * from './sessaoResumo';
@@ -49,6 +54,9 @@ export * from './sessaoUpdate';
 export * from './tempoDeslocamento';
 export * from './tempoDeslocamentoInput';
 export * from './tempoDeslocamentoUpdate';
+export * from './usuario';
+export * from './usuarioComSenha';
+export * from './usuarioLogado';
 export * from './veiculo';
 export * from './veiculoInput';
 export * from './veiculoUpdate';

@@ -7,3 +7,4 @@ export * from "./locais";
 export * from "./tempos";
 export * from "./eventos";
 export * from "./escalas";
+export * from "./usuarios";

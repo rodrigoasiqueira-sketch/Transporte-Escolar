@@ -29,6 +29,10 @@ tags:
     description: Tempos de deslocamento
   - name: escalas
     description: Escalas de transporte
+  - name: auth
+    description: Autenticação
+  - name: usuarios
+    description: Usuários do sistema
 
 paths:
   /healthz:
@@ -1072,6 +1076,157 @@ paths:
               schema:
                 $ref: "#/components/schemas/EscalaCapacidade"
 
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login com email e senha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login realizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioLogado"
+        "401":
+          description: Credenciais inválidas
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Encerrar sessão
+      responses:
+        "200":
+          description: Sessão encerrada
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Retorna usuário logado
+      responses:
+        "200":
+          description: Usuário logado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioLogado"
+        "401":
+          description: Não autenticado
+
+  /auth/alterar-senha:
+    post:
+      operationId: alterarSenha
+      tags: [auth]
+      summary: Alterar senha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlterarSenhaInput"
+      responses:
+        "200":
+          description: Senha alterada
+
+  # ── Usuários ──────────────────────────────────────────────────────────────
+  /usuarios:
+    get:
+      operationId: listUsuarios
+      tags: [usuarios]
+      summary: Listar usuários (admin)
+      responses:
+        "200":
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Usuario"
+    post:
+      operationId: criarUsuario
+      tags: [usuarios]
+      summary: Criar usuário (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NovoUsuarioInput"
+      responses:
+        "201":
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioComSenha"
+
+  /usuarios/{id}:
+    put:
+      operationId: atualizarUsuario
+      tags: [usuarios]
+      summary: Atualizar usuário (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AtualizarUsuarioInput"
+      responses:
+        "200":
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+    delete:
+      operationId: deletarUsuario
+      tags: [usuarios]
+      summary: Desativar usuário (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Usuário desativado
+
+  /usuarios/{id}/resetar-senha:
+    post:
+      operationId: resetarSenhaUsuario
+      tags: [usuarios]
+      summary: Resetar senha (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Senha resetada
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [senha_temporaria]
+                properties:
+                  senha_temporaria: { type: string }
+
 components:
   schemas:
     HealthStatus:
@@ -1522,3 +1677,70 @@ components:
           type: array
           items:
             type: string
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    UsuarioLogado:
+      type: object
+      required: [id, nome, email, role, primeiro_acesso]
+      properties:
+        id:              { type: integer }
+        nome:            { type: string }
+        email:           { type: string }
+        role:            { type: string }
+        primeiro_acesso: { type: boolean }
+
+    LoginInput:
+      type: object
+      required: [email, senha]
+      properties:
+        email: { type: string }
+        senha: { type: string }
+
+    AlterarSenhaInput:
+      type: object
+      required: [senha_atual, senha_nova]
+      properties:
+        senha_atual: { type: string }
+        senha_nova:  { type: string }
+
+    # ── Usuários ───────────────────────────────────────────────────────────────
+    Usuario:
+      type: object
+      required: [id, nome, email, role, primeiro_acesso, ativo, criado_em]
+      properties:
+        id:              { type: integer }
+        nome:            { type: string }
+        email:           { type: string }
+        role:            { type: string }
+        primeiro_acesso: { type: boolean }
+        ativo:           { type: boolean }
+        criado_em:       { type: string }
+
+    UsuarioComSenha:
+      type: object
+      required: [id, nome, email, role, primeiro_acesso, ativo, criado_em, senha_temporaria]
+      properties:
+        id:               { type: integer }
+        nome:             { type: string }
+        email:            { type: string }
+        role:             { type: string }
+        primeiro_acesso:  { type: boolean }
+        ativo:            { type: boolean }
+        criado_em:        { type: string }
+        senha_temporaria: { type: string }
+
+    NovoUsuarioInput:
+      type: object
+      required: [nome, email, role]
+      properties:
+        nome:  { type: string }
+        email: { type: string }
+        role:  { type: string }
+
+    AtualizarUsuarioInput:
+      type: object
+      properties:
+        nome:  { type: string }
+        email: { type: string }
+        role:  { type: string }
+        ativo: { type: boolean }

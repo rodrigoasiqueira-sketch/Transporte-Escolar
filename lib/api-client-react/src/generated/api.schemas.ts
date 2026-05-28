@@ -428,6 +428,58 @@ export interface ImportResult {
   erros: string[];
 }
 
+export interface UsuarioLogado {
+  id: number;
+  nome: string;
+  email: string;
+  role: string;
+  primeiro_acesso: boolean;
+}
+
+export interface LoginInput {
+  email: string;
+  senha: string;
+}
+
+export interface AlterarSenhaInput {
+  senha_atual: string;
+  senha_nova: string;
+}
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+  role: string;
+  primeiro_acesso: boolean;
+  ativo: boolean;
+  criado_em: string;
+}
+
+export interface UsuarioComSenha {
+  id: number;
+  nome: string;
+  email: string;
+  role: string;
+  primeiro_acesso: boolean;
+  ativo: boolean;
+  criado_em: string;
+  senha_temporaria: string;
+}
+
+export interface NovoUsuarioInput {
+  nome: string;
+  email: string;
+  role: string;
+}
+
+export interface AtualizarUsuarioInput {
+  nome?: string;
+  email?: string;
+  role?: string;
+  ativo?: boolean;
+}
+
 export type ListAlunosParams = {
 escola_id?: number;
 periodo?: string;
@@ -473,5 +525,9 @@ export type ListEscalasParams = {
 sessao_id?: number;
 escola_id?: number;
 evento_id?: number;
+};
+
+export type ResetarSenhaUsuario200 = {
+  senha_temporaria: string;
 };
 

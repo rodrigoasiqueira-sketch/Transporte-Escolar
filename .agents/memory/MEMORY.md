@@ -1,0 +1,1 @@
+- [connect-pg-simple esbuild](connect-pg-simple-esbuild.md) — createTableIfMissing fails in esbuild bundle; create session table manually instead.

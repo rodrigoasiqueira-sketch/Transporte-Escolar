@@ -50,7 +50,7 @@ export default function EventoEscalas() {
   const { data: escalas, isLoading } = useListEscalas({
     evento_id: eventoId,
     sessao_id: sessaoId !== "all" ? Number(sessaoId) : undefined
-  }, { query: { enabled: !!eventoId } });
+  }, { query: { enabled: !!eventoId, queryKey: getListEscalasQueryKey({ evento_id: eventoId }) } });
 
   const { data: escolas } = useListEscolas();
   const { data: veiculos } = useListVeiculos({ situacao: "Ativo" });

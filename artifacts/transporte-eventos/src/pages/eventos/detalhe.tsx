@@ -30,7 +30,7 @@ export default function EventoDetalhe() {
     query: { enabled: !!id, queryKey: getListSessoesQueryKey(id) }
   });
 
-  const createSessaoMutation = useCreateSessao(id);
+  const createSessaoMutation = useCreateSessao();
   const [sessaoNome, setSessaoNome] = useState("");
   const [horarioInicio, setHorarioInicio] = useState("");
   const [duracao, setDuracao] = useState("120");
@@ -39,6 +39,7 @@ export default function EventoDetalhe() {
   const handleCriarSessao = async () => {
     try {
       await createSessaoMutation.mutateAsync({
+        eventoId: id,
         data: {
           nome: sessaoNome || undefined,
           horario_inicio: horarioInicio,

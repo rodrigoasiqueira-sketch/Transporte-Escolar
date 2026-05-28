@@ -977,3 +977,111 @@ export const GetEscalaCapacidadeResponse = zod.object({
 })
 
 
+/**
+ * @summary Login com email e senha
+ */
+export const LoginBody = zod.object({
+  "email": zod.string(),
+  "senha": zod.string()
+})
+
+export const LoginResponse = zod.object({
+  "id": zod.number(),
+  "nome": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "primeiro_acesso": zod.boolean()
+})
+
+
+/**
+ * @summary Retorna usuário logado
+ */
+export const GetMeResponse = zod.object({
+  "id": zod.number(),
+  "nome": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "primeiro_acesso": zod.boolean()
+})
+
+
+/**
+ * @summary Alterar senha
+ */
+export const AlterarSenhaBody = zod.object({
+  "senha_atual": zod.string(),
+  "senha_nova": zod.string()
+})
+
+
+/**
+ * @summary Listar usuários (admin)
+ */
+export const ListUsuariosResponseItem = zod.object({
+  "id": zod.number(),
+  "nome": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "primeiro_acesso": zod.boolean(),
+  "ativo": zod.boolean(),
+  "criado_em": zod.string()
+})
+export const ListUsuariosResponse = zod.array(ListUsuariosResponseItem)
+
+
+/**
+ * @summary Criar usuário (admin)
+ */
+export const CriarUsuarioBody = zod.object({
+  "nome": zod.string(),
+  "email": zod.string(),
+  "role": zod.string()
+})
+
+
+/**
+ * @summary Atualizar usuário (admin)
+ */
+export const AtualizarUsuarioParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AtualizarUsuarioBody = zod.object({
+  "nome": zod.string().optional(),
+  "email": zod.string().optional(),
+  "role": zod.string().optional(),
+  "ativo": zod.boolean().optional()
+})
+
+export const AtualizarUsuarioResponse = zod.object({
+  "id": zod.number(),
+  "nome": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "primeiro_acesso": zod.boolean(),
+  "ativo": zod.boolean(),
+  "criado_em": zod.string()
+})
+
+
+/**
+ * @summary Desativar usuário (admin)
+ */
+export const DeletarUsuarioParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Resetar senha (admin)
+ */
+export const ResetarSenhaUsuarioParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResetarSenhaUsuarioResponse = zod.object({
+  "senha_temporaria": zod.string()
+})
+
+
